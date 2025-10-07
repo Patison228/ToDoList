@@ -1,0 +1,310 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TodolistApp.MainPage"
+             xmlns:model="clr-namespace:TodolistApp.Model"           
+             xmlns:viewmodel="clr-namespace:TodolistApp.ViewModels"
+             x:DataType="viewmodel:MainViewModel">
+
+    <ScrollView>
+        <Grid RowDefinitions="100, auto, auto, auto, auto, auto, auto, auto, auto, auto, *"
+              ColumnDefinitions="*, *, *"
+              Padding="30"
+              RowSpacing="10"
+              ColumnSpacing="10">
+
+            
+            <Frame Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
+                   BackgroundColor="#E3F2FD"
+                   CornerRadius="15"
+                   Padding="0"
+                   HasShadow="True">
+
+                <Label Text="Click on button to add new task" 
+                          HorizontalOptions="Center"
+                          FontSize="20"
+                          TextColor="blue"/>
+            </Frame>
+
+            
+            <Button Grid.Row="1" Grid.Column="2"
+                    Text="Add" Command="{Binding AddTaskCommand}"/>
+
+            
+            <Entry Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                    Placeholder="Enter title of new task..."
+                    Text="{Binding NewTaskTitle}"/>
+
+            
+            <Entry Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                    Placeholder="Enter description of new task..."
+                    Text="{Binding NewTaskDescription}"/>
+
+            
+            <Picker Grid.Row="4" Grid.Column="0" 
+                    ItemsSource="{Binding TaskFlags}"
+                    SelectedItem="{Binding NewTaskFlag}"
+                    HorizontalOptions="Fill"/>
+
+
+            <DatePicker Grid.Row="4" Grid.Column="1"    
+                        Date="{Binding NewTaskDeadline}"
+                        Format="dd.MM.yyyy"
+                        MinimumDate="{Binding Today}"
+                        HorizontalOptions="Fill"/>
+
+
+            <TimePicker Grid.Row="4" Grid.Column="1" 
+                        Time="{Binding NewTaskDeadline}"
+                        Format="HH:mm"
+                        HorizontalOptions="End"/>
+            
+            <Label Grid.Row="5" Grid.Column="0"
+                   Text="Your tasks:"
+                   HorizontalOptions="Start"
+                   FontSize="30"/>
+
+            <Picker Grid.Column="2" Grid.Row="5"
+                    Title="Choose a filter:" 
+                    ItemsSource="{Binding TaskFiltFlag}" 
+                    SelectedItem="{Binding SelectedFilter}"/>
+
+            <CollectionView Grid.Row="6" Grid.ColumnSpan="3"
+                            ItemsSource="{Binding TasksCollection}">
+                
+                <CollectionView.ItemTemplate>
+                    
+                    <DataTemplate x:DataType="model:MyTask">
+
+                        <Frame BackgroundColor="LightGray"
+                               CornerRadius="15"
+                               HasShadow="False"
+                               Padding="15"
+                               VerticalOptions="Fill"
+                               HorizontalOptions="Fill">
+
+                            <Grid Padding="10" 
+                                  ColumnDefinitions="*, Auto, Auto, Auto, *"
+                                  RowDefinitions="*">
+
+                                <StackLayout Grid.Column="0" 
+                                             Grid.ColumnSpan="5"
+                                             VerticalOptions="Center">
+
+                                    <Label Text="{Binding TaskName}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"/>
+
+                                    <Label Text="{Binding TaskDescription}"
+                                           FontSize="14"
+                                           TextColor="Gray"/>
+
+                                    <Label Text="{Binding TaskDeadline, StringFormat='Deadline: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="DarkGray"/>
+
+                                </StackLayout>
+
+                                <StackLayout Grid.Column="2"
+                                             Orientation="Horizontal"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="Center"
+                                             Spacing="5">
+
+                                    <Button Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleCompleteCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Text="✓"
+                                            TextColor="White"
+                                            WidthRequest="30"
+                                            HeightRequest="30"
+                                            FontSize="14"
+                                            CornerRadius="15"
+                                            BackgroundColor="Blue"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"/>
+
+                                    <Button Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteItemCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Text="✕"
+                                            TextColor="White"
+                                            WidthRequest="30"
+                                            HeightRequest="30"
+                                            FontSize="14"
+                                            CornerRadius="15"
+                                            BackgroundColor="Red"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"/>
+
+                                </StackLayout>
+
+                                <Label Text="{Binding TaskFlag}"
+                                       Grid.Column="4"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="End"
+                                       Margin="10,0"
+                                       FontSize="12"/>
+
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                    
+                </CollectionView.ItemTemplate>
+                
+            </CollectionView>
+
+            <Label Grid.Row="7" Grid.Column="0"
+                   Text="Your complited tasks:"
+                   HorizontalOptions="Start"
+                   FontSize="30"/>
+
+            <CollectionView Grid.Row="8" Grid.ColumnSpan="3"
+                            ItemsSource="{Binding CompletedTasksCollection}">
+
+                <CollectionView.ItemTemplate>
+
+                    <DataTemplate x:DataType="model:MyTask">
+
+                        <Frame BackgroundColor="LightGreen"
+                               CornerRadius="15"
+                               HasShadow="False"
+                               Padding="15"
+                               VerticalOptions="Fill"
+                               HorizontalOptions="Fill">
+
+                            <Grid Padding="10" 
+                                  ColumnDefinitions="*, Auto, Auto, Auto, *"
+                                  RowDefinitions="*">
+
+                                <StackLayout Grid.Column="0" 
+                                             Grid.ColumnSpan="5"
+                                             VerticalOptions="Center">
+
+                                    <Label Text="{Binding TaskName}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"/>
+
+                                    <Label Text="{Binding TaskDescription}"
+                                           FontSize="14"
+                                           TextColor="Gray"/>
+
+                                    <Label Text="{Binding TaskDeadline, StringFormat='Deadline: {0:dd.MM.yyyy}'}"
+                                   FontSize="12"
+                                   TextColor="DarkGray"/>
+
+                                </StackLayout>
+
+                                <StackLayout Grid.Column="2"
+                                     Orientation="Horizontal"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center"
+                                     Spacing="5">
+
+                                    <Button Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteItemCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Text="✕"
+                                    TextColor="White"
+                                    WidthRequest="30"
+                                    HeightRequest="30"
+                                    FontSize="14"
+                                    CornerRadius="15"
+                                    BackgroundColor="Red"
+                                    VerticalOptions="Center"
+                                    HorizontalOptions="Center"/>
+
+                                </StackLayout>
+
+                                <Label Text="{Binding TaskFlag}"
+                                   Grid.Column="4"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="End"
+                                   Margin="10,0"
+                                   FontSize="12"/>
+
+
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+
+            <Label Grid.Row="9" Grid.Column="0"
+                   Text="Your overdue tasks:"
+                   HorizontalOptions="Start"
+                   FontSize="30"/>
+
+            <CollectionView Grid.Row="10" Grid.ColumnSpan="3"
+                            ItemsSource="{Binding DeadlineTasksCollection}">
+                <CollectionView.ItemTemplate>
+
+                    <DataTemplate x:DataType="model:MyTask">
+
+                        <Frame BackgroundColor="PaleVioletRed"
+                               CornerRadius="15"
+                               HasShadow="False"
+                               Padding="15"
+                               VerticalOptions="Fill"
+                               HorizontalOptions="Fill">
+
+                            <Grid Padding="10" 
+                                  ColumnDefinitions="*, Auto, Auto, Auto, *"
+                                  RowDefinitions="*">
+
+                                <StackLayout Grid.Column="0" 
+                                             Grid.ColumnSpan="5"
+                                             VerticalOptions="Center">
+
+                                    <Label Text="{Binding TaskName}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"/>
+
+                                    <Label Text="{Binding TaskDescription}"
+                                           FontSize="14"
+                                           TextColor="Gray"/>
+
+                                    <Label Text="{Binding TaskDeadline, StringFormat='Deadline: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="DarkGray"/>
+
+                                </StackLayout>
+
+                                <StackLayout Grid.Column="2"
+                                             Orientation="Horizontal"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="Center"
+                                             Spacing="5">
+
+                                    <Button Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteItemCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Text="✕"
+                                            TextColor="White"
+                                            WidthRequest="30"
+                                            HeightRequest="30"
+                                            FontSize="14"
+                                            CornerRadius="15"
+                                            BackgroundColor="Red"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"/>
+
+                                </StackLayout>
+
+                                <Label Text="{Binding TaskFlag}"
+                                       Grid.Column="4"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="End"
+                                       Margin="10,0"
+                                       FontSize="12"/>
+
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </Grid>
+        
+    </ScrollView>
+    
+</ContentPage>

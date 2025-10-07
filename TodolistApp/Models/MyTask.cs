@@ -1,0 +1,40 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using SQLite;
+
+namespace TodolistApp.Model
+{
+    public partial class MyTask : ObservableObject
+    {
+        [PrimaryKey, AutoIncrement]
+        public int Id { get; set; }
+
+        [ObservableProperty]
+        private string taskName;
+
+        [ObservableProperty]
+        private string taskDescription;
+
+        [ObservableProperty]
+        private bool isCompleted;
+
+        [ObservableProperty]
+        private bool isDeadlineOver;
+
+        [ObservableProperty]
+        private DateTime taskDeadline;
+
+        [ObservableProperty]
+        private string taskFlag; 
+
+        public MyTask(string name, string description, DateTime deadline, string flag, bool completed = false)
+        {
+            taskName = name;
+            taskDescription = description;
+            taskDeadline = deadline;
+            taskFlag = flag;
+            isCompleted = completed;
+        }
+
+        public MyTask() { }
+    }
+}
