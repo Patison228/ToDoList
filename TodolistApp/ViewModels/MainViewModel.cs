@@ -9,7 +9,7 @@ namespace TodolistApp.ViewModels
     
     public partial class MainViewModel : ObservableObject
     {
-        private readonly DatabaseForToDo database;
+        private readonly DatabaseForToDo database; // база данных
 
         public List<string> TaskFiltFlag { get; } = new()
         {
