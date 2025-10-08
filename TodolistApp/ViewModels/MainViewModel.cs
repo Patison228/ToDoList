@@ -115,7 +115,60 @@ namespace TodolistApp.ViewModels
             }
         }
 
-        
+        [RelayCommand]
+        private async Task AddTask()
+        {
+            if (string.IsNullOrWhiteSpace(NewTaskTitle))
+            {
+                await Application.Current.MainPage.DisplayAlert("Ошибка", "Введите название задачи", "OK");
+                return;
+            }
+
+            try
+            {
+                var newTask = new MyTask(
+                    name: NewTaskTitle,
+                    description: NewTaskDescription ?? string.Empty,
+                    deadline: NewTaskDeadline,
+                    flag: NewTaskFlag,
+                    completed: false,
+                    overDeadline: false
+                );
+
+                await _database.SaveItemAsync(newTask);
+
+                // Очистка формы
+                NewTaskTitle = string.Empty;
+                NewTaskDescription = string.Empty;
+                NewTaskFlag = "Another";
+                NewTaskDeadline = DateTime.Now.AddDays(1);
+
+                await LoadTaskAndFilterAsync();
+
+                await Application.Current.MainPage.DisplayAlert("", "Задача добавлена", "OK");
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось добавить задачу: {ex.Message}", "OK");
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteTask(MyTask task)
+        {
+            if (task != null)
+            {
+                try
+                {
+                    await _database.DeleteItemAsync(task);
+                    await LoadTaskAndFilterAsync();
+                }
+                catch (Exception ex)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось удалить задачу: {ex.Message}", "OK");
+                }
+            }
+        }
 
         private async Task CheckDeadlineTasks()
         {
