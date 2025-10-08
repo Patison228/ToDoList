@@ -5,20 +5,13 @@ using TodolistApp.Data;
 using TodolistApp.Model;
 
 namespace TodolistApp.ViewModels
-{ 
-    
+{
     public partial class MainViewModel : ObservableObject
     {
-        private readonly DatabaseForToDo database; // база данных
+        private readonly DatabaseForToDo _database;
+        private PeriodicTimer _timer;
 
-        public List<string> TaskFiltFlag { get; } = new()
-        {
-            "without filters",
-            "Home",
-            "Study",
-            "Work",
-            "Another"
-        };
+        public DateTime Today => DateTime.Today;
 
         public List<string> TaskFlags { get; } = new()
         {
@@ -28,80 +21,74 @@ namespace TodolistApp.ViewModels
             "Another"
         };
 
-        public DateTime Today => DateTime.Today; // Для минимального для в датапикере
+        public List<string> FilterFlags { get; } = new()
+        {
+            "Without flags",
+            "Home",
+            "Study",
+            "Work",
+            "Another"
+        };
 
         [ObservableProperty]
-        ObservableCollection<MyTask> tasksCollection; // Коллекция заданий
+        private string selectedFilter = "Without flags";
 
         [ObservableProperty]
-        ObservableCollection<MyTask> deadlineTasksCollection;
+        private ObservableCollection<MyTask> tasksCollection;
 
         [ObservableProperty]
-        ObservableCollection<MyTask> completedTasksCollection;
+        private ObservableCollection<MyTask> completedTasksCollection;
 
         [ObservableProperty]
-        private DateTime newTaskDeadline; // Для дедлайна
-        
-        [ObservableProperty]
-        private string newTaskTitle; // Для названия
+        private ObservableCollection<MyTask> deadlineTasksCollection;
 
         [ObservableProperty]
-        private string newTaskDescription; // Для описания
+        private string newTaskTitle;
 
         [ObservableProperty]
-        private string newTaskFlag; // Поле выбранного флага новому заданию
+        private string newTaskDescription;
 
         [ObservableProperty]
-        private string selectedFilter;
+        private string newTaskFlag = "Another";
+
+        [ObservableProperty]
+        private DateTime newTaskDeadline = DateTime.Now.AddDays(1);
 
         public MainViewModel()
         {
-            tasksCollection = new ObservableCollection<MyTask>();
-            completedTasksCollection = new ObservableCollection<MyTask>();
-            deadlineTasksCollection = new ObservableCollection<MyTask>();
+            _database = new DatabaseForToDo();
+            TasksCollection = new ObservableCollection<MyTask>();
+            CompletedTasksCollection = new ObservableCollection<MyTask>();
+            DeadlineTasksCollection = new ObservableCollection<MyTask>();
 
-            newTaskDeadline = DateTime.Now.AddDays(1);
-            newTaskFlag = "Another";
-            newTaskTitle = string.Empty;
-            newTaskDescription = string.Empty;
-
-            selectedFilter = "Without filters";
-
-            database = new DatabaseForToDo();
-
+            _ = LoadTaskAndFilterAsync();
+            _ = StartDeadlineChecker();
         }
-
-        private void ClearForm()
-        {
-            NewTaskTitle = string.Empty;
-            NewTaskDescription = string.Empty;
-            NewTaskFlag = "Another";
-            NewTaskDeadline = DateTime.Now.AddDays(1);
-        }
-
-        
 
         [RelayCommand]
         private async Task LoadTaskAndFilterAsync()
         {
-            var tasks = await database.GetItemsAsync();
-
-            if (selectedFilter == "Without filters")
+            try
             {
-                TasksCollection = new ObservableCollection<MyTask>(tasks.Where(item => !item.IsCompleted && !item.IsDeadlineOver));
+                var items = await _database.GetItemsAsync();
 
-                CompletedTasksCollection = new ObservableCollection<MyTask>(tasks.Where(item => item.IsCompleted == true));
-
-                DeadlineTasksCollection = new ObservableCollection<MyTask>(tasks.Where(item => item.IsDeadlineOver == true));
+                if (SelectedFilter == "Without flags")
+                {
+                    TasksCollection = new ObservableCollection<MyTask>(items.Where(item => !item.IsCompleted && !item.IsDeadlineOver));
+                    CompletedTasksCollection = new ObservableCollection<MyTask>(items.Where(item => item.IsCompleted));
+                    DeadlineTasksCollection = new ObservableCollection<MyTask>(items.Where(item => item.IsDeadlineOver));
+                }
+                else
+                {
+                    var filteredItems = items.Where(item => item.TaskFlag == SelectedFilter);
+                    TasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => !item.IsCompleted && !item.IsDeadlineOver));
+                    CompletedTasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => item.IsCompleted));
+                    DeadlineTasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => item.IsDeadlineOver));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var filteredItems = tasks.Where(item => item.TaskFlag == SelectedFilter);
-                TasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => !item.IsCompleted && !item.IsDeadlineOver));
-
-                CompletedTasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => item.IsCompleted == true));
-
-                DeadlineTasksCollection = new ObservableCollection<MyTask>(filteredItems.Where(item => item.IsDeadlineOver == true));
+                await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось загрузить задачи: {ex.Message}", "OK");
             }
         }
 
@@ -111,25 +98,62 @@ namespace TodolistApp.ViewModels
         }
 
         [RelayCommand]
-        private void AddTask()
-        {
-            if (NewTaskTitle == string.Empty)
-                return;
-
-            var newTask = new MyTask(NewTaskTitle, NewTaskDescription, NewTaskDeadline, NewTaskFlag, false);
-
-            tasksCollection.Add(newTask);
-
-            ClearForm();
-        }
-
-        [RelayCommand]
-        private void DeleteTask(MyTask task)
+        private async Task ToggleComplete(MyTask task)
         {
             if (task != null)
             {
-                tasksCollection.Remove(task);
+                try
+                {
+                    task.IsCompleted = !task.IsCompleted;
+                    await _database.SaveItemAsync(task);
+                    await LoadTaskAndFilterAsync();
+                }
+                catch (Exception ex)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось обновить задачу: {ex.Message}", "OK");
+                }
             }
         }
+
+        
+
+        private async Task CheckDeadlineTasks()
+        {
+            var deadlineTasks = new List<MyTask>();
+
+            foreach (var task in TasksCollection)
+            {
+                if (task.TaskDeadline < DateTime.Now)
+                {
+                    deadlineTasks.Add(task);
+                }
+            }
+
+            if (deadlineTasks.Count > 0)
+            {
+                await MarkTasksAsDeadlineOver(deadlineTasks);
+            }
+        }
+
+        private async Task MarkTasksAsDeadlineOver(List<MyTask> tasks)
+        {
+            foreach (var task in tasks)
+            {
+                task.IsDeadlineOver = true;
+                await _database.SaveItemAsync(task);
+            }
+            await LoadTaskAndFilterAsync();
+        }
+
+        private async Task StartDeadlineChecker()
+        {
+            _timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+
+            while (await _timer.WaitForNextTickAsync())
+            {
+                await CheckDeadlineTasks();
+            }
+        }
+
     }
 }

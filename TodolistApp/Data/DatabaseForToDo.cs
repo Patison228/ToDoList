@@ -5,62 +5,51 @@ namespace TodolistApp.Data
 {
     public class DatabaseForToDo
     {
-        private readonly SQLiteAsyncConnection _database;
-        private bool _isInitialized = false;
+        private SQLiteAsyncConnection _database;
 
         public DatabaseForToDo()
         {
-            string path = Path.Combine(FileSystem.AppDataDirectory, "ToDo.db");
-            _database = new SQLiteAsyncConnection(path);
+            _ = InitializeAsync();
         }
 
-        private async Task<bool> InitializeAsync()
+        private async Task InitializeAsync()
         {
-            if (_isInitialized)
-                return true;
+            if (_database != null)
+                return;
 
-            var result = await _database.CreateTableAsync<DatabaseForToDo>();
-            _isInitialized = result > 0;
-            return _isInitialized;
+            try
+            {
+                var databasePath = Path.Combine(FileSystem.AppDataDirectory, "ToDoList.db");
+                _database = new SQLiteAsyncConnection(databasePath);
+
+                var result = await _database.CreateTableAsync<MyTask>();
+                System.Diagnostics.Debug.WriteLine($"Таблица создана: {result}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка инициализации базы данных: {ex.Message}");
+            }
         }
 
         public async Task<List<MyTask>> GetItemsAsync()
         {
-            var initialized = await InitializeAsync();
-
-            if (!initialized)
-                return new List<MyTask>();
-
+            await InitializeAsync();
             return await _database.Table<MyTask>().ToListAsync();
         }
 
-        public async Task<bool> SaveItemAsync(MyTask task)
+        public async Task<int> SaveItemAsync(MyTask item)
         {
-            var initialized = await InitializeAsync();
-
-            if (!initialized)
-                return false;
-
-            if (task.Id == 0)
-            {
-                var result = await _database.InsertAsync(task);
-                return result > 0;
-            }
+            await InitializeAsync();
+            if (item.Id == 0)
+                return await _database.InsertAsync(item);
             else
-            {
-                var result = await _database.UpdateAsync(task);
-                return result > 0;
-            }
+                return await _database.UpdateAsync(item);
         }
 
-        public async Task<bool> DeleteItemAsync(MyTask task)
+        public async Task<int> DeleteItemAsync(MyTask item)
         {
-            var initialized = await InitializeAsync();
-            if (!initialized)
-                return false;
-
-            var result = await _database.DeleteAsync(task);
-            return result > 0;
+            await InitializeAsync();
+            return await _database.DeleteAsync(item);
         }
     }
 }
