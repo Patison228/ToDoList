@@ -23,7 +23,7 @@ namespace TodolistApp.ViewModels
 
         public List<string> FilterFlags { get; } = new()
         {
-            "Without flags",
+            "All",
             "Home",
             "Study",
             "Work",
@@ -31,7 +31,7 @@ namespace TodolistApp.ViewModels
         };
 
         [ObservableProperty]
-        private string selectedFilter = "Without flags";
+        private string selectedFilter = "All";
 
         [ObservableProperty]
         private ObservableCollection<MyTask> tasksCollection;
@@ -61,6 +61,9 @@ namespace TodolistApp.ViewModels
             CompletedTasksCollection = new ObservableCollection<MyTask>();
             DeadlineTasksCollection = new ObservableCollection<MyTask>();
 
+            NewTaskDescription = string.Empty;
+            NewTaskTitle = string.Empty;
+
             _ = LoadTaskAndFilterAsync();
             _ = StartDeadlineChecker();
         }
@@ -72,9 +75,13 @@ namespace TodolistApp.ViewModels
             {
                 var items = await _database.GetItemsAsync();
 
-                if (SelectedFilter == "Without flags")
+                if (SelectedFilter == "All")
                 {
-                    TasksCollection = new ObservableCollection<MyTask>(items.Where(item => !item.IsCompleted && !item.IsDeadlineOver));
+                    TasksCollection = new ObservableCollection<MyTask>(
+                        items.Where(
+                            item => !item.IsCompleted && !item.IsDeadlineOver
+                         )
+                    );
                     CompletedTasksCollection = new ObservableCollection<MyTask>(items.Where(item => item.IsCompleted));
                     DeadlineTasksCollection = new ObservableCollection<MyTask>(items.Where(item => item.IsDeadlineOver));
                 }
@@ -88,7 +95,7 @@ namespace TodolistApp.ViewModels
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось загрузить задачи: {ex.Message}", "OK");
+                await (Application.Current?.MainPage?.DisplayAlert("Ошибка", $"Не удалось загрузить задачи: {ex.Message}", "OK") ?? Task.CompletedTask);
             }
         }
 
@@ -98,7 +105,7 @@ namespace TodolistApp.ViewModels
         }
 
         [RelayCommand]
-        private async Task ToggleComplete(MyTask task)
+        private async Task MarkComplete(MyTask task)
         {
             if (task != null)
             {
@@ -110,7 +117,7 @@ namespace TodolistApp.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось обновить задачу: {ex.Message}", "OK");
+                    await (Application.Current?.MainPage?.DisplayAlert("Ошибка", $"Не удалось обновить задачу: {ex.Message}", "OK") ?? Task.CompletedTask);
                 }
             }
         }
@@ -120,7 +127,7 @@ namespace TodolistApp.ViewModels
         {
             if (string.IsNullOrWhiteSpace(NewTaskTitle))
             {
-                await Application.Current.MainPage.DisplayAlert("Ошибка", "Введите название задачи", "OK");
+                await (Application.Current?.MainPage?.DisplayAlert("Ошибка", "Введите название задачи", "OK") ?? Task.CompletedTask);
                 return;
             }
 
@@ -145,11 +152,11 @@ namespace TodolistApp.ViewModels
 
                 await LoadTaskAndFilterAsync();
 
-                await Application.Current.MainPage.DisplayAlert("", "Задача добавлена", "OK");
+                await (Application.Current?.MainPage?.DisplayAlert("", "Задача добавлена", "OK") ?? Task.CompletedTask);
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось добавить задачу: {ex.Message}", "OK");
+                await (Application.Current?.MainPage?.DisplayAlert("Ошибка", $"Не удалось загрузить задачи: {ex.Message}", "OK") ?? Task.CompletedTask);
             }
         }
 
@@ -165,7 +172,7 @@ namespace TodolistApp.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Ошибка", $"Не удалось удалить задачу: {ex.Message}", "OK");
+                    await (Application.Current?.MainPage?.DisplayAlert("Ошибка", $"Не удалось удалить задачу: {ex.Message}", "OK") ?? Task.CompletedTask);
                 }
             }
         }
